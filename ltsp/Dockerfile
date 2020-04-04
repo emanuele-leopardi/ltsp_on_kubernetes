@@ -73,24 +73,25 @@ RUN echo 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' \
       sysstat \
       ipvsadm \
       ipset \
-      make
+      make \
+      nano
 
 # Install kernel
-RUN ltsp-chroot apt-get -y install linux-generic-hwe-16.04
+RUN ltsp-chroot apt-get -y install linux-generic-hwe-18.04
 
 FROM basesystem as ltsp-image
 
 # Install docker
 RUN ltsp-chroot sh -c \
    '  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
-   && echo "deb https://download.docker.com/linux/ubuntu xenial stable" \
+   && echo "deb https://download.docker.com/linux/ubuntu bionic stable" \
         > /etc/apt/sources.list.d/docker.list \
    && apt-get -y update \
    && apt-get -y install \
-        docker-ce=$(apt-cache madison docker-ce | grep 18.06 | head -1 | awk "{print $ 3}")'
+        docker-ce=$(apt-cache madison docker-ce | grep 19.03 | head -1 | awk "{print $ 3}")'
 
 # Configure docker options
-RUN DOCKER_OPTS="$(echo \
+ADD daemon.json /etc/docker/daemon.json
       --storage-driver=overlay2 \
       --iptables=false \
       --ip-masq=false \
@@ -105,7 +106,7 @@ RUN DOCKER_OPTS="$(echo \
 # Install kubeadm, kubelet and kubectl
 RUN ltsp-chroot sh -c \
       '  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - \
-      && echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" \
+      && echo "deb http://apt.kubernetes.io/ kubernetes-bionic main" \
            > /etc/apt/sources.list.d/kubernetes.list \
       && apt-get -y update \
       && apt-get -y install kubelet kubeadm kubectl cri-tools'
@@ -143,3 +144,4 @@ FROM ltsp-base
 COPY --from=ltsp-image /opt/ltsp/images /opt/ltsp/images
 COPY --from=ltsp-image /etc/nbd-server/conf.d /etc/nbd-server/conf.d
 COPY --from=ltsp-image /var/lib/tftpboot /var/lib/tftpboot
+RUN chmod +x /bin/nbd-server-wrapper.sh

@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ltsp-server
@@ -17,7 +17,7 @@ spec:
       hostNetwork: true
       containers:
       - name: tftpd
-        image: ltsp:latest
+        image: localhost:5000/ltsp:latest
         command: [ "/usr/sbin/in.tftpd", "-L", "-u", "tftp", "-a", ":69", "-s", "/var/lib/tftpboot" ]
         lifecycle:
           postStart:
@@ -28,7 +28,7 @@ spec:
           mountPath: "/var/lib/tftpboot/ltsp/amd64/config"
 
       - name: nbd-server
-        image: ltsp:latest
+        image: localhost:5000/ltsp:latest
         command: [ "/bin/nbd-server-wrapper.sh" ]
 
       volumes:
@@ -46,19 +46,205 @@ data:
     [default]
     KEEP_SYSTEM_SERVICES           = "ssh ureadahead dbus-org.freedesktop.login1 systemd-logind polkitd cgmanager ufw rpcbind nfs-kernel-server"
 
+    MODULE_01                      = overlay
+    MODULE_02                      = netconsole
+    MODULE_02                      = br_netfilter
+
+    LDM_AUTOLOGIN                  = True
+    LDM_DEBUG_TERMINAL             = True
+
     PREINIT_00_TIME                = "ln -sf /usr/share/zoneinfo/Europe/Rome /etc/localtime"
     PREINIT_01_FIX_HOSTNAME        = "sed -i '/^127.0.0.2/d' /etc/hosts"
-    PREINIT_02_DOCKER_OPTIONS      = "sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/dockerd -H fd:// --storage-driver overlay2 --iptables=false --ip-masq=false --log-driver=json-file --log-opt=max-size=10m --log-opt=max-file=5|' /etc/systemd/system/docker.service"
-
+    PREINIT_02_DOCKER_OPTIONS      = "sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/dockerd -H fd:// --storage-driver=aufs --iptables=false --ip-masq=false --log-driver=json-file --log-opt=max-size=10m --log-opt=max-file=5|' /etc/systemd/system/docker.service"
     FSTAB_01_SSH                   = "/dev/data/ssh     /etc/ssh          ext4 nofail,noatime,nodiratime 0 0"
     FSTAB_02_JOURNALD              = "/dev/data/journal /var/log/journal  ext4 nofail,noatime,nodiratime 0 0"
     FSTAB_03_DOCKER                = "/dev/data/docker  /var/lib/docker   ext4 nofail,noatime,nodiratime 0 0"
-
     # Each command will stop script execution when fail
-    RCFILE_01_SSH_SERVER           = "cp /rofs/etc/ssh/*_config /etc/ssh; ssh-keygen -A"
-    RCFILE_02_SSH_CLIENT           = "mkdir -p /root/.ssh/; echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD/D6o7elbjxzT0zTBCXUTOkcdq6m2v2czNVZmoRhr29HoXRqe1C2bMJsEiMmpzRtO7mlJrdkWaz/BTf0vtFGgh4CaZJAvmcr1h/V5g+cgs+VwnFk1I8hMFiqvvvlYb0iJ+jNknj6tvFZ/PYR0+ys5kiUwPHSkyu1ZXpO3Br4O47SEfhq8sL5Ru59IfKssGKajL2Xfb3WfOEIdXG2jNofy9s1jWb5qu96zCgTW41tveLkljuOJcRoJaS2hXM+vJ8kPAwbYLL9boOsDFuC0PLtGEezK2Ii5Hu9xDS37QDVkZcJ6K1Ng6h8AhXyMU4Mvzy0wpYMb3RtDGT5FCKlowakTL admin@kubernetes' >> /root/.ssh/authorized_keys"
-    RCFILE_03_KERNEL_DEBUG         = "sysctl -w kernel.unknown_nmi_panic=1 kernel.softlockup_panic=1; modprobe netconsole netconsole=@/vmbr0,@10.9.0.15/"
-    RCFILE_04_SYSCTL               = "sysctl -w fs.file-max=20000000 fs.nr_open=20000000 net.ipv4.neigh.default.gc_thresh1=80000 net.ipv4.neigh.default.gc_thresh2=90000 net.ipv4.neigh.default.gc_thresh3=100000"
-    RCFILE_05_FORWARD              = "echo 1 > /proc/sys/net/ipv4/ip_forward"
-    RCFILE_06_MODULES              = "modprobe br_netfilter"
-    RCFILE_07_JOIN_K8S             = "kubeadm join 192.168.1.220:6443 --token kqax2z.l3s0pu33nmacfz18 --discovery-token-ca-cert-hash sha256:03cef31d790cc09421a8e9944b6bbc62d2bf2484c69127d6bc897910c7516b2c"
+    RCFILE_01_SSH_SERVER           = "echo HERE I AM ; cp /rofs/etc/ssh/*_config /etc/ssh; ssh-keygen -A"
+    RCFILE_02_SSH_CLIENT           = "mkdir -p /root/.ssh/; echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCeLrS9C8bBpDRO0Scef32dm+Tpc3Hg8kLhU3Xn4+K0N0+DmvgbbYSuNy+dzFfMZVsXcvO9xbGI15i0PMUkrwXdsaM/F6jp2d/QIuMDIyEJ5RSJw0SvzUNEYZaMmU1rFt/kefY97aqTDdq/DeBGW+I3Jy1DvlxmzRw2HTL9yxLKnAQpFq2iZOfod29m54f1x2omNlDMiNDTsdzM6TbigpNNdI1h/LzfTvSxCie9ANwjLA+30nZpdj+cE4vUaMm4xmZrFGcoffGvC7Nsn2zM2sXKJC9Mqdhv+bBX27K8TkkRu47F0blBE+nRAPoGqfX/lE9H3TX186M15cBbTov29DCgZEXLKwY1PzEyrRuFhyPFDWJVB9l9ZiOHgHYXh54ExL1GxKrPhwQG847P5Vm16P+XqsEQlI7Xx3j2PW/CZyY977rLgoPjchXsQDA01FIA5tmlr8sZYk0IZvcTw4UnGcZAU5JEsViClyx8hv2mCSPotpfqqUvqn/EP5lttHK5np9s= root@ema-GL502VT' >> /root/.ssh/authorized_keys"
+    RCFILE_04_ROOT_PWD             = "echo SETTING ROOT PASSWORD ; echo 'root:alunno10' | chpasswd"
+    RCFILE_05_SYSCTL               = "echo \"kernel.softlockup_panic=1 \nkernel.unknown_nmi_panic=1 \nfs.file-max=20000000 \nfs.nr_open=20000000 \nnet.ipv4.neigh.default.gc_thresh1=80000 \nnet.ipv4.neigh.default.gc_thresh2=90000 \nnet.ipv4.neigh.default.gc_thresh3=100000\" > /etc/sysctl.d/11-mycfg.conf && sysctl -p"
+    RCFILE_06_FORWARD              = "echo 1 > /proc/sys/net/ipv4/ip_forward"
+    RCFILE_07_JOIN_K8S             = "kubeadm join 192.168.1.220:6443 --token vzsnq4.o5sp9gz2pjeugani --discovery-token-ca-cert-hash sha256:8dc86b1741711384708a5ac02bd7ea7918a51cd6acc3a76d98cc16a0528e84b1"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dhcp-server
+  labels:
+      app: dhcp-server
+spec:
+  selector:
+    matchLabels:
+      name: dhcp-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: dhcp-server
+    spec:
+      hostNetwork: true
+      containers:
+      - name: isc-dhcp-server
+        image: sirferdek/isc-dhcp-server:latest
+        volumeMounts:
+        - name: dhcpdconf
+          mountPath: "/etc/dhcp/"
+        - name: iscconfig
+          mountPath: "/etc/default/"
+      volumes:
+      - name: dhcpdconf
+        configMap:
+          name: dhcpdconf-configmap
+      - name: iscconfig
+        configMap:
+          name: iscconfig-configmap
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dhcpdconf-configmap
+data:
+  dhcpd.conf: |
+    #
+    # Sample configuration file for ISC dhcpd for Debian
+    #
+    # Attention: If /etc/ltsp/dhcpd.conf exists, that will be used as
+    # configuration file instead of this file.
+    #
+    #
+
+    # The ddns-updates-style parameter controls whether or not the server will
+    # attempt to do a DNS update when a lease is confirmed. We default to the
+    # behavior of the version 2 packages ('none', since DHCP v2 didn't
+    # have support for DDNS.)
+    ddns-updates on;
+    ddns-update-style interim;
+    ddns-ttl 60;
+    update-static-leases on;
+    #forces your domain:
+    ignore client-updates;
+    #responds to leasequery:
+    allow leasequery;
+
+    # option definitions common to all supported networks...
+    option domain-name "kubernetes.kube";
+    option domain-name-servers 192.166.0.1,192.168.1.1,8.8.8.8,8.8.4.4;
+    #option routers 192.168.1.1;
+    option space ipxe;
+    option ipxe-encap-opts code 175 = encapsulate ipxe;
+    option ipxe.menu code 39 = unsigned integer 8;
+    option ipxe.no-pxedhcp code 176 = unsigned integer 8;
+    option arch code 93 = unsigned integer 16;
+
+    default-lease-time 600;
+    max-lease-time 7200;
+
+    # If this DHCP server is the official DHCP server for the local
+    # network, the authoritative directive should be uncommented.
+    authoritative;
+
+    # Use this to send dhcp log messages to a different log file (you also
+    # have to hack syslog.conf to complete the redirection
+    log-facility local7;
+
+    # No service will be given on this subnet, but declaring it helps the 
+    # DHCP server to understand the network topology.
+
+    #subnet 10.152.187.0 netmask 255.255.255.0 {
+    #}
+
+    # This is a very basic subnet declaration.
+
+    #subnet 10.254.239.0 netmask 255.255.255.224 {
+    #  range 10.254.239.10 10.254.239.20;
+    #  option routers rtr-239-0-1.example.org, rtr-239-0-2.example.org;
+    #}
+
+    # This declaration allows BOOTP clients to get dynamic addresses,
+    # which we don't really recommend.
+
+    #subnet 10.254.239.32 netmask 255.255.255.224 {
+    #  range dynamic-bootp 10.254.239.40 10.254.239.60;
+    #  option broadcast-address 10.254.239.31;
+    #  option routers rtr-239-32-1.example.org;
+    #}
+
+    # A slightly different configuration for an internal subnet.
+    subnet 192.166.0.0 netmask 255.255.255.0 {
+      range 192.166.0.10 192.166.0.250;
+      option ipxe.no-pxedhcp 1;
+      option routers 192.166.0.1;
+      filename "/ltsp/amd64/pxelinux.0";
+    }
+#      if exists ipxe.menu {
+#        filename "ltsp/ltsp.ipxe";
+#      } elsif option arch = 00:00 {
+#        filename "ltsp/undionly.kpxe";
+#      } elsif option arch = 00:07 {
+#        filename "ltsp/snponly.efi";
+#      } elsif option arch = 00:09 {
+#        filename "ltsp/snponly.efi";
+#      } else {
+#        filename "ltsp/unmatched-client";
+#      }
+
+    # Hosts which require special configuration options can be listed in
+    # host statements.   If no address is specified, the address will be
+    # allocated dynamically (if possible), but the host-specific information
+    # will still come from the host declaration.
+
+    #host passacaglia {
+    #  hardware ethernet 0:0:c0:5d:bd:95;
+    #  filename "vmunix.passacaglia";
+    #  server-name "toccata.fugue.com";
+    #}
+
+    # Fixed IP addresses can also be specified for hosts.   These addresses
+    # should not also be listed as being available for dynamic assignment.
+    # Hosts for which fixed IP addresses have been specified can boot using
+    # BOOTP or DHCP.   Hosts for which no fixed address is specified can only
+    # be booted with DHCP, unless there is an address range on the subnet
+    # to which a BOOTP client is connected which has the dynamic-bootp flag
+    # set.
+    #host fantasia {
+    #  hardware ethernet 08:00:07:26:c0:a5;
+    #  fixed-address fantasia.fugue.com;
+    #}
+
+    # You can declare a class of clients and then do address allocation
+    # based on that.   The example below shows a case where all clients
+    # in a certain class get addresses on the 10.17.224/24 subnet, and all
+    # other clients get addresses on the 10.0.29/24 subnet.
+
+    #class "foo" {
+    #  match if substring (option vendor-class-identifier, 0, 4) = "SUNW";
+    #}
+
+    #shared-network 224-29 {
+    #  subnet 10.17.224.0 netmask 255.255.255.0 {
+    #    option routers rtr-224.example.org;
+    #  }
+    #  subnet 10.0.29.0 netmask 255.255.255.0 {
+    #    option routers rtr-29.example.org;
+    #  }
+    #  pool {
+    #    allow members of "foo";
+    #    range 10.17.224.10 10.17.224.250;
+    #  }
+    #  pool {
+    #    deny members of "foo";
+    #    range 10.0.29.10 10.0.29.230;
+    #  }
+    #}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iscconfig-configmap
+data:
+  isc-dhcp-server: |
+    INTERFACES="enp3s0"    
