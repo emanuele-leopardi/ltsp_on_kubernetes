@@ -92,16 +92,6 @@ RUN ltsp-chroot sh -c \
 
 # Configure docker options
 ADD daemon.json /etc/docker/daemon.json
-      --storage-driver=overlay2 \
-      --iptables=false \
-      --ip-masq=false \
-      --log-driver=json-file \
-      --log-opt=max-size=10m \
-      --log-opt=max-file=5 \
-      )" \
- && sed "/^ExecStart=/ s|$| $DOCKER_OPTS|g" \
-      /opt/ltsp/amd64/lib/systemd/system/docker.service \
-      > /opt/ltsp/amd64/etc/systemd/system/docker.service
 
 # Install kubeadm, kubelet and kubectl
 RUN ltsp-chroot sh -c \
