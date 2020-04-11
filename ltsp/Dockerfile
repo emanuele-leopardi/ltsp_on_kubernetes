@@ -77,26 +77,26 @@ RUN echo 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' \
       nano
 
 # Install kernel
-RUN ltsp-chroot apt-get -y install linux-generic-hwe-18.04
+RUN ltsp-chroot apt-get -y install linux-generic-hwe-16.04
 
 FROM basesystem as ltsp-image
 
 # Install docker
 RUN ltsp-chroot sh -c \
    '  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
-   && echo "deb https://download.docker.com/linux/ubuntu bionic stable" \
+   && echo "deb https://download.docker.com/linux/ubuntu xenial stable" \
         > /etc/apt/sources.list.d/docker.list \
    && apt-get -y update \
    && apt-get -y install \
         docker-ce=$(apt-cache madison docker-ce | grep 19.03 | head -1 | awk "{print $ 3}")'
 
 # Configure docker options
-ADD daemon.json /etc/docker/daemon.json
+ADD daemon.json /opt/ltsp/amd64/etc/docker/daemon.json
 
 # Install kubeadm, kubelet and kubectl
 RUN ltsp-chroot sh -c \
       '  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - \
-      && echo "deb http://apt.kubernetes.io/ kubernetes-bionic main" \
+      && echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" \
            > /etc/apt/sources.list.d/kubernetes.list \
       && apt-get -y update \
       && apt-get -y install kubelet kubeadm kubectl cri-tools'

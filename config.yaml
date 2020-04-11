@@ -17,7 +17,7 @@ spec:
       hostNetwork: true
       containers:
       - name: tftpd
-        image: localhost:5000/ltsp:latest
+        image: localhost:5000/ltsp:16.04
         command: [ "/usr/sbin/in.tftpd", "-L", "-u", "tftp", "-a", ":69", "-s", "/var/lib/tftpboot" ]
         lifecycle:
           postStart:
@@ -28,7 +28,7 @@ spec:
           mountPath: "/var/lib/tftpboot/ltsp/amd64/config"
 
       - name: nbd-server
-        image: localhost:5000/ltsp:latest
+        image: localhost:5000/ltsp:16.04
         command: [ "/bin/nbd-server-wrapper.sh" ]
 
       volumes:
@@ -65,7 +65,7 @@ data:
     RCFILE_04_ROOT_PWD             = "echo SETTING ROOT PASSWORD ; echo 'root:root' | chpasswd"
     RCFILE_05_SYSCTL               = "echo \"kernel.softlockup_panic=1 \nkernel.unknown_nmi_panic=1 \nfs.file-max=20000000 \nfs.nr_open=20000000 \nnet.ipv4.neigh.default.gc_thresh1=80000 \nnet.ipv4.neigh.default.gc_thresh2=90000 \nnet.ipv4.neigh.default.gc_thresh3=100000\" > /etc/sysctl.d/11-mycfg.conf && sysctl -p"
     RCFILE_06_FORWARD              = "echo 1 > /proc/sys/net/ipv4/ip_forward"
-    RCFILE_07_JOIN_K8S             = "kubeadm join 192.168.1.220:6443 --token vzsnq4.o5sp9gz2pjeugani --discovery-token-ca-cert-hash sha256:8dc86b1741711384708a5ac02bd7ea7918a51cd6acc3a76d98cc16a0528e84b1"
+    RCFILE_07_JOIN_K8S             = "kubeadm join 192.168.1.220:6443 --token 861c98.ijxz132bqfsx2cjd --discovery-token-ca-cert-hash sha256:8dc86b1741711384708a5ac02bd7ea7918a51cd6acc3a76d98cc16a0528e84b1"
 
 ---
 apiVersion: apps/v1
