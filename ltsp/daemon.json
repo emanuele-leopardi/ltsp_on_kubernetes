@@ -5,5 +5,7 @@
     "max-size": "100m",
     "max-file": "5"
   },
-  "storage-driver": "aufs"
+  "storage-driver": "aufs",
+  "iptables": false,
+  "ip-masq": false
 }

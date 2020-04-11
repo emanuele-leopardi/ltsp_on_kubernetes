@@ -55,17 +55,16 @@ data:
 
     PREINIT_00_TIME                = "ln -sf /usr/share/zoneinfo/Europe/Rome /etc/localtime"
     PREINIT_01_FIX_HOSTNAME        = "sed -i '/^127.0.0.2/d' /etc/hosts"
-    PREINIT_02_DOCKER_OPTIONS      = "sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/dockerd -H fd:// --storage-driver=aufs --iptables=false --ip-masq=false --log-driver=json-file --log-opt=max-size=10m --log-opt=max-file=5|' /etc/systemd/system/docker.service"
     FSTAB_01_SSH                   = "/dev/data/ssh     /etc/ssh          ext4 nofail,noatime,nodiratime 0 0"
     FSTAB_02_JOURNALD              = "/dev/data/journal /var/log/journal  ext4 nofail,noatime,nodiratime 0 0"
     FSTAB_03_DOCKER                = "/dev/data/docker  /var/lib/docker   ext4 nofail,noatime,nodiratime 0 0"
     # Each command will stop script execution when fail
-    RCFILE_01_SSH_SERVER           = "echo HERE I AM ; cp /rofs/etc/ssh/*_config /etc/ssh; ssh-keygen -A"
+    RCFILE_01_SSH_SERVER           = "cp /rofs/etc/ssh/*_config /etc/ssh; ssh-keygen -A"
     RCFILE_02_SSH_CLIENT           = "mkdir -p /root/.ssh/; echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCeLrS9C8bBpDRO0Scef32dm+Tpc3Hg8kLhU3Xn4+K0N0+DmvgbbYSuNy+dzFfMZVsXcvO9xbGI15i0PMUkrwXdsaM/F6jp2d/QIuMDIyEJ5RSJw0SvzUNEYZaMmU1rFt/kefY97aqTDdq/DeBGW+I3Jy1DvlxmzRw2HTL9yxLKnAQpFq2iZOfod29m54f1x2omNlDMiNDTsdzM6TbigpNNdI1h/LzfTvSxCie9ANwjLA+30nZpdj+cE4vUaMm4xmZrFGcoffGvC7Nsn2zM2sXKJC9Mqdhv+bBX27K8TkkRu47F0blBE+nRAPoGqfX/lE9H3TX186M15cBbTov29DCgZEXLKwY1PzEyrRuFhyPFDWJVB9l9ZiOHgHYXh54ExL1GxKrPhwQG847P5Vm16P+XqsEQlI7Xx3j2PW/CZyY977rLgoPjchXsQDA01FIA5tmlr8sZYk0IZvcTw4UnGcZAU5JEsViClyx8hv2mCSPotpfqqUvqn/EP5lttHK5np9s= root@ema-GL502VT' >> /root/.ssh/authorized_keys"
-    RCFILE_04_ROOT_PWD             = "echo SETTING ROOT PASSWORD ; echo 'root:root' | chpasswd"
+    RCFILE_04_ROOT_PWD             = "echo 'root:root' | chpasswd"
     RCFILE_05_SYSCTL               = "echo \"kernel.softlockup_panic=1 \nkernel.unknown_nmi_panic=1 \nfs.file-max=20000000 \nfs.nr_open=20000000 \nnet.ipv4.neigh.default.gc_thresh1=80000 \nnet.ipv4.neigh.default.gc_thresh2=90000 \nnet.ipv4.neigh.default.gc_thresh3=100000\" > /etc/sysctl.d/11-mycfg.conf && sysctl -p"
     RCFILE_06_FORWARD              = "echo 1 > /proc/sys/net/ipv4/ip_forward"
-    RCFILE_07_JOIN_K8S             = "kubeadm join 192.168.1.220:6443 --token 861c98.ijxz132bqfsx2cjd --discovery-token-ca-cert-hash sha256:8dc86b1741711384708a5ac02bd7ea7918a51cd6acc3a76d98cc16a0528e84b1"
+    RCFILE_07_JOIN_K8S             = "kubeadm join 192.166.0.1:6443 --token 861c98.ijxz132bqfsx2cjd --discovery-token-ca-cert-hash sha256:8dc86b1741711384708a5ac02bd7ea7918a51cd6acc3a76d98cc16a0528e84b1"
 
 ---
 apiVersion: apps/v1
@@ -179,17 +178,6 @@ data:
       option routers 192.166.0.1;
       filename "/ltsp/amd64/pxelinux.0";
     }
-#      if exists ipxe.menu {
-#        filename "ltsp/ltsp.ipxe";
-#      } elsif option arch = 00:00 {
-#        filename "ltsp/undionly.kpxe";
-#      } elsif option arch = 00:07 {
-#        filename "ltsp/snponly.efi";
-#      } elsif option arch = 00:09 {
-#        filename "ltsp/snponly.efi";
-#      } else {
-#        filename "ltsp/unmatched-client";
-#      }
 
     # Hosts which require special configuration options can be listed in
     # host statements.   If no address is specified, the address will be
