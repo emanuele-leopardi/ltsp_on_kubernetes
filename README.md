@@ -1,3 +1,13 @@
+#### To run this code the assumption is that you already have:
+
+##### a k8s master with one slave 
+
+##### or an untainted master able to host 
+- ltsp server 
+- dhcp server
+- nbd server
+- tftp server
+
 ## Project's aim
 Based on what is available [here](https://kubernetes.io/blog/2018/10/02/building-a-network-bootable-server-farm-for-kubernetes-with-ltsp/)
 I was able to do the following:
